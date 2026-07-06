@@ -1,0 +1,113 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-motodigo}
+      POSTGRES_USER: ${POSTGRES_USER:-motodigo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - motodigo_net
+
+  object-storage:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-change-me}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change-me}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - motodigo_net
+
+  backend-core:
+    build:
+      context: ../motodi-go-backend-core
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-motodigo}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-motodigo}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      JWT_ISSUER_URL: ${JWT_ISSUER_URL:-http://localhost:8080}
+    expose:
+      - "8081"
+    ports:
+      - "${BACKEND_CORE_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - motodigo_net
+
+  backend-ai:
+    build:
+      context: ../motodi-go-backend-ai
+    environment:
+      ENVIRONMENT: local
+      BACKEND_CORE_BASE_URL: http://backend-core:8081
+      REQUEST_TIMEOUT_SECONDS: 3
+      MAX_RECOMMENDATIONS: 5
+    expose:
+      - "8000"
+    ports:
+      - "${BACKEND_AI_PORT:-8000}:8000"
+    depends_on:
+      - backend-core
+    networks:
+      - motodigo_net
+
+  api-gateway:
+    build:
+      context: ../motodi-go-api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_PORT: 8080
+      BACKEND_CORE_BASE_URL: http://backend-core:8081
+      BACKEND_AI_BASE_URL: http://backend-ai:8000
+      JWT_ISSUER_URL: ${JWT_ISSUER_URL:-http://localhost:8080}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - backend-core
+      - backend-ai
+    networks:
+      - motodigo_net
+
+  admin-dashboard:
+    build:
+      context: ../motodi-go-admin-dashboard
+    environment:
+      PUBLIC_APP_ENV: local
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
+    ports:
+      - "${ADMIN_DASHBOARD_PORT:-3000}:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - motodigo_net
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  motodigo_net:
+    name: motodigo_net
+
