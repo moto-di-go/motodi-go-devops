@@ -46,6 +46,9 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-motodigo}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
       JWT_ISSUER_URL: ${JWT_ISSUER_URL:-http://localhost:8080}
+      GIS_ROUTES_YAOUNDE_PATH: ${GIS_ROUTES_YAOUNDE_PATH:-/app/data/gis/routes_yaounde.gpkg}
+    volumes:
+      - ../motodi-go-backend-core/data/gis:/app/data/gis:ro
     expose:
       - "8081"
     ports:
@@ -110,4 +113,3 @@ volumes:
 networks:
   motodigo_net:
     name: motodigo_net
-
