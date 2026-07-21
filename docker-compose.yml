@@ -36,6 +36,19 @@ services:
     networks:
       - motodigo_net
 
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks:
+      - motodigo_net
+
   backend-core:
     build:
       context: ../motodi-go-backend-core
@@ -107,7 +120,24 @@ services:
       SERVER_PORT: 8080
       BACKEND_CORE_BASE_URL: http://backend-core:8081
       BACKEND_AI_BASE_URL: http://backend-ai:8000
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-at-least-32-bytes-for-hs256}
       JWT_ISSUER_URL: ${JWT_ISSUER_URL:-http://localhost:8080}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-motodi-go-api}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GATEWAY_RATE_LIMIT_ENABLED: ${GATEWAY_RATE_LIMIT_ENABLED:-true}
+      GATEWAY_RATE_LIMIT_AUTH_CAPACITY: ${GATEWAY_RATE_LIMIT_AUTH_CAPACITY:-5}
+      GATEWAY_RATE_LIMIT_AUTH_REFILL_TOKENS: ${GATEWAY_RATE_LIMIT_AUTH_REFILL_TOKENS:-1}
+      GATEWAY_RATE_LIMIT_AUTH_REFILL_PERIOD_SECONDS: ${GATEWAY_RATE_LIMIT_AUTH_REFILL_PERIOD_SECONDS:-120}
+      GATEWAY_RATE_LIMIT_OTP_CAPACITY: ${GATEWAY_RATE_LIMIT_OTP_CAPACITY:-5}
+      GATEWAY_RATE_LIMIT_OTP_REFILL_TOKENS: ${GATEWAY_RATE_LIMIT_OTP_REFILL_TOKENS:-1}
+      GATEWAY_RATE_LIMIT_OTP_REFILL_PERIOD_SECONDS: ${GATEWAY_RATE_LIMIT_OTP_REFILL_PERIOD_SECONDS:-120}
+      GATEWAY_RATE_LIMIT_PAYMENT_CAPACITY: ${GATEWAY_RATE_LIMIT_PAYMENT_CAPACITY:-10}
+      GATEWAY_RATE_LIMIT_PAYMENT_REFILL_TOKENS: ${GATEWAY_RATE_LIMIT_PAYMENT_REFILL_TOKENS:-10}
+      GATEWAY_RATE_LIMIT_PAYMENT_REFILL_PERIOD_SECONDS: ${GATEWAY_RATE_LIMIT_PAYMENT_REFILL_PERIOD_SECONDS:-60}
+      GATEWAY_RATE_LIMIT_CALLBACK_CAPACITY: ${GATEWAY_RATE_LIMIT_CALLBACK_CAPACITY:-60}
+      GATEWAY_RATE_LIMIT_CALLBACK_REFILL_TOKENS: ${GATEWAY_RATE_LIMIT_CALLBACK_REFILL_TOKENS:-60}
+      GATEWAY_RATE_LIMIT_CALLBACK_REFILL_PERIOD_SECONDS: ${GATEWAY_RATE_LIMIT_CALLBACK_REFILL_PERIOD_SECONDS:-60}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
     ports:
       - "${API_GATEWAY_PORT:-8080}:8080"
@@ -115,6 +145,8 @@ services:
       backend-core:
         condition: service_healthy
       backend-ai:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness >/dev/null"]
