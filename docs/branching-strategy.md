@@ -3,7 +3,7 @@
 ## Branches
 
 - `main`: production-ready code and release tags.
-- `develop`: integration branch for the next delivery.
+- `dev`: integration branch for the next delivery.
 - `feature/<ticket-id>-short-name`: feature implementation.
 - `fix/<ticket-id>-short-name`: bug fixes.
 - `release/<version>`: final hardening before a release tag.
@@ -29,4 +29,3 @@ v1.0.0
 ```
 
 Deployment pipelines should build immutable images and deploy by tag, not by mutable branch name.
-

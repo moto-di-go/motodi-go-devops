@@ -6,6 +6,8 @@ Examples of sensitive values:
 
 - Database passwords.
 - JWT signing keys.
+- OTP pepper values.
+- SMS provider API keys.
 - Mobile Money API credentials.
 - Push notification credentials.
 - TLS private keys.
@@ -43,4 +45,3 @@ Before release, run a secret scan and manually review changes touching:
 - Docker Compose files.
 - CI/CD workflows.
 - Nginx and TLS configuration.
-

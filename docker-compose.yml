@@ -45,7 +45,17 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-motodigo}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-motodigo}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-at-least-32-bytes-for-hs256}
       JWT_ISSUER_URL: ${JWT_ISSUER_URL:-http://localhost:8080}
+      OTP_PROVIDER: ${OTP_PROVIDER:-log}
+      OTP_PEPPER: ${OTP_PEPPER:-change-me-otp-pepper}
+      AFRICAS_TALKING_BASE_URL: ${AFRICAS_TALKING_BASE_URL:-https://api.africastalking.com}
+      AFRICAS_TALKING_USERNAME: ${AFRICAS_TALKING_USERNAME:-}
+      AFRICAS_TALKING_API_KEY: ${AFRICAS_TALKING_API_KEY:-}
+      AFRICAS_TALKING_SENDER_ID: ${AFRICAS_TALKING_SENDER_ID:-}
+      AFRICAS_TALKING_ENQUEUE: ${AFRICAS_TALKING_ENQUEUE:-1}
+      AFRICAS_TALKING_CONNECT_TIMEOUT_MS: ${AFRICAS_TALKING_CONNECT_TIMEOUT_MS:-3000}
+      AFRICAS_TALKING_READ_TIMEOUT_MS: ${AFRICAS_TALKING_READ_TIMEOUT_MS:-5000}
       GIS_ROUTES_YAOUNDE_PATH: ${GIS_ROUTES_YAOUNDE_PATH:-/app/data/gis/routes_yaounde.gpkg}
     volumes:
       - ../motodi-go-backend-core/data/gis:/app/data/gis:ro
@@ -56,6 +66,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks:
       - motodigo_net
 
@@ -72,7 +88,14 @@ services:
     ports:
       - "${BACKEND_AI_PORT:-8000}:8000"
     depends_on:
-      - backend-core
+      backend-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     networks:
       - motodigo_net
 
@@ -89,8 +112,16 @@ services:
     ports:
       - "${API_GATEWAY_PORT:-8080}:8080"
     depends_on:
-      - backend-core
-      - backend-ai
+      backend-core:
+        condition: service_healthy
+      backend-ai:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     networks:
       - motodigo_net
 
@@ -103,7 +134,14 @@ services:
     ports:
       - "${ADMIN_DASHBOARD_PORT:-3000}:3000"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     networks:
       - motodigo_net
 
