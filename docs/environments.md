@@ -35,6 +35,7 @@ docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
 ```
 
 Staging should use images from the registry and environment variables injected by the host or CI.
+The staging override intentionally requires external values for database, object storage, JWT, OTP/SMS and CORS settings.
 
 ## Production
 
@@ -44,4 +45,3 @@ Production must not use `.env.example` values. Required controls:
 - Database backups tested before releases.
 - GitHub Actions deployment gated by tests and review.
 - Healthchecks for gateway, core, AI and dashboard.
-

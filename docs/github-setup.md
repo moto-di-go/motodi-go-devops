@@ -11,11 +11,17 @@ Create repositories:
 
 ## Protections
 
-Protect `main` and `develop`:
+Protect `main` and `dev`:
 
 - Pull request required.
 - At least one approving review.
-- Required checks: build, tests, lint, dependency or secret scan when available.
+- Required checks per repository:
+  - backend-core: `Build and Unit Tests`, `Auth Integration Tests`, `Secret Scan`.
+  - api-gateway: `Build and Tests`, `Secret Scan`.
+  - backend-ai: `Quality and Tests`, `Secret Scan`.
+  - admin-dashboard: `Check and Build`, `Secret Scan`.
+  - devops: `Docker Compose Config`, `Docker Smoke`, `Secret Scan`.
+  - mobile: existing analyze/test/build and secret/dependency checks.
 - No force push.
 - Delete branch after merge.
 
@@ -34,4 +40,3 @@ Recommended milestones:
 - `MVP`
 - `V1.1`
 - `V1.2`
-

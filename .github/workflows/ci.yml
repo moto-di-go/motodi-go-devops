@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-config:
+    name: Docker Compose Config
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: motodigo
+      POSTGRES_USER: motodigo
+      POSTGRES_PASSWORD: ci-postgres-password-placeholder
+      MINIO_ROOT_USER: ci-minio-user
+      MINIO_ROOT_PASSWORD: ci-minio-password-placeholder
+      JWT_SECRET: ci-jwt-secret-at-least-32-bytes-long
+      JWT_ISSUER_URL: https://api.staging.motodi-go.example
+      OTP_PEPPER: ci-otp-pepper-at-least-16-bytes
+      AFRICAS_TALKING_USERNAME: ci-africas-talking-user
+      AFRICAS_TALKING_API_KEY: ci-africas-talking-api-key-placeholder
+      AFRICAS_TALKING_SENDER_ID: MOTODIGO
+      CORS_ALLOWED_ORIGINS: https://admin.staging.motodi-go.example
+      PUBLIC_API_BASE_URL: https://api.staging.motodi-go.example/api/v1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate local compose
+        run: docker compose -f docker-compose.yml config >/tmp/motodigo-compose-local.yml
+
+      - name: Validate staging compose
+        run: docker compose -f docker-compose.yml -f docker-compose.staging.yml config >/tmp/motodigo-compose-staging.yml
+
+  docker-smoke:
+    name: Docker Smoke
+    runs-on: ubuntu-latest
+    needs: compose-config
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout devops
+        uses: actions/checkout@v4
+        with:
+          path: motodi-go-devops
+
+      - name: Checkout backend core
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/motodi-go-backend-core
+          path: motodi-go-backend-core
+
+      - name: Checkout backend AI
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/motodi-go-backend-ai
+          path: motodi-go-backend-ai
+
+      - name: Checkout API gateway
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/motodi-go-api-gateway
+          path: motodi-go-api-gateway
+
+      - name: Checkout admin dashboard
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/motodi-go-admin-dashboard
+          path: motodi-go-admin-dashboard
+
+      - name: Start stack
+        working-directory: motodi-go-devops
+        run: docker compose up --build -d --wait
+
+      - name: Probe services and database
+        working-directory: motodi-go-devops
+        run: |
+          curl -fsS http://localhost:8080/actuator/health/readiness
+          curl -fsS http://localhost:8081/actuator/health/readiness
+          curl -fsS http://localhost:8000/health
+          curl -fsS http://localhost:3000/
+          docker compose exec -T postgres psql -U motodigo -d motodigo -c "select extname from pg_extension where extname in ('postgis','pgcrypto') order by extname;"
+          docker compose exec -T postgres psql -U motodigo -d motodigo -c "select version, success from flyway_schema_history order by installed_rank;"
+
+      - name: Stop stack
+        if: always()
+        working-directory: motodi-go-devops
+        run: docker compose down -v
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
