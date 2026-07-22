@@ -6,6 +6,7 @@
 *.crt
 *.p12
 *.sql
+!scripts/seed-local-admin.sql
 *.dump
 *.bak
 backups/
@@ -15,4 +16,3 @@ logs/
 *.iml
 .vscode/settings.json
 .vscode/launch.json
-
