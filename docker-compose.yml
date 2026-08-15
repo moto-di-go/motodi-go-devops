@@ -81,6 +81,11 @@ services:
       AFRICAS_TALKING_CONNECT_TIMEOUT_MS: ${AFRICAS_TALKING_CONNECT_TIMEOUT_MS:-3000}
       AFRICAS_TALKING_READ_TIMEOUT_MS: ${AFRICAS_TALKING_READ_TIMEOUT_MS:-5000}
       GIS_ROUTES_YAOUNDE_PATH: ${GIS_ROUTES_YAOUNDE_PATH:-/app/data/gis/routes_yaounde.gpkg}
+      MOBILE_MONEY_CLIENT_MODE: ${MOBILE_MONEY_CLIENT_MODE:-stub}
+      MOBILE_MONEY_PENDING_TTL: ${MOBILE_MONEY_PENDING_TTL:-30m}
+      MTN_MOMO_BASE_URL: ${MTN_MOMO_BASE_URL:-https://placeholder.mtn.example}
+      ORANGE_MONEY_BASE_URL: ${ORANGE_MONEY_BASE_URL:-https://placeholder.orange.example}
+      AGGREGATOR_BASE_URL: ${AGGREGATOR_BASE_URL:-https://placeholder.aggregator.example}
     volumes:
       - ../motodi-go-backend-core/data/gis:/app/data/gis:ro
     expose:

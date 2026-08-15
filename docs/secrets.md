@@ -9,6 +9,7 @@ Examples of sensitive values:
 - OTP pepper values.
 - SMS provider API keys.
 - Mobile Money API credentials.
+- Mobile Money callback HMAC secrets (`MTN_CALLBACK_HMAC_SECRET`, `ORANGE_CALLBACK_HMAC_SECRET`, `AGGREGATOR_CALLBACK_HMAC_SECRET`).
 - Push notification credentials.
 - TLS private keys.
 - Object storage access keys.

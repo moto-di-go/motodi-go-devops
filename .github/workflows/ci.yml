@@ -31,6 +31,15 @@ jobs:
       AFRICAS_TALKING_SENDER_ID: MOTODIGO
       CORS_ALLOWED_ORIGINS: https://admin.staging.motodi-go.example
       PUBLIC_API_BASE_URL: https://api.staging.motodi-go.example/api/v1
+      API_BASE_URL: http://api-gateway:8080/api/v1
+      KYC_STORAGE_ENDPOINT: http://object-storage:9000
+      KYC_STORAGE_REGION: us-east-1
+      KYC_STORAGE_BUCKET: motodigo-kyc
+      KYC_STORAGE_ACCESS_KEY: ci-kyc-access
+      KYC_STORAGE_SECRET_KEY: ci-kyc-secret
+      KYC_ENCRYPTION_ACTIVE_KEY_ID: prod
+      KYC_ENCRYPTION_KEYS_PROD: Y2kta3ljLWVuY3J5cHRpb24ta2V5LTMyYnl0ZXMh
+      KYC_CHECKSUM_PEPPER: ci-kyc-checksum-pepper
     steps:
       - name: Checkout
         uses: actions/checkout@v4

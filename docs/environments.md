@@ -37,6 +37,10 @@ docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
 Staging should use images from the registry and environment variables injected by the host or CI.
 The staging override intentionally requires external values for database, object storage, JWT, OTP/SMS and CORS settings.
 
+OTP SMS in staging is sent only through Africa's Talking Bulk (`OTP_PROVIDER=africas-talking`).
+The backend still generates and validates OTP codes; `OTP_PROVIDER=log` is rejected outside `local`/`test`.
+Copy `.env.staging.example` and inject real `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY` and `AFRICAS_TALKING_SENDER_ID`.
+
 ## Production
 
 Production must not use `.env.example` values. Required controls:
