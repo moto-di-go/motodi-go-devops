@@ -1,0 +1,23 @@
+{
+  "version": 8,
+  "name": "MotodiGo",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "openfreemap": {
+      "type": "vector",
+      "url": "https://tiles.openfreemap.org/planet"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f4f1ea"
+      }
+    }
+  ],
+  "metadata": {
+    "motodigo": "Local style entry. Mobile apps should use https://tiles.openfreemap.org/styles/liberty until a PMTiles worker is deployed."
+  }
+}

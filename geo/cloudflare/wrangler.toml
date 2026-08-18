@@ -1,0 +1,7 @@
+name = "motodigo-pmtiles"
+main = "worker.js"
+compatibility_date = "2026-01-15"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "motodigo-pmtiles"

@@ -15,6 +15,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
+Open-source map stack (Photon, Valhalla, local style endpoint):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.geo.yml up --build
+```
+
+See `docs/geo-stack.md` for keys, costs and extract URLs.
+
 Default local endpoints:
 
 - API Gateway: `http://localhost:8080`
@@ -24,6 +32,9 @@ Default local endpoints:
 - PostgreSQL/PostGIS: `localhost:5432`
 - MinIO API: `http://localhost:9000`
 - MinIO console: `http://localhost:9001`
+- Photon (geo overlay): `http://localhost:2322`
+- Valhalla (geo overlay): `http://localhost:8002`
+- Tiles style (geo overlay): `http://localhost:8088/styles/motodigo.json`
 
 ## Staging
 

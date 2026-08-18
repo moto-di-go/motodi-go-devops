@@ -1,0 +1,90 @@
+# Overlay geo open-source. Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.geo.yml up --build
+#
+# First boot downloads Cameroon extracts (Photon dump + OSM PBF) and can take
+# 15–40 minutes depending on bandwidth and CPU. Data is cached in volumes.
+
+services:
+  photon:
+    image: rtuszik/photon-docker:latest
+    environment:
+      UPDATE_STRATEGY: ${PHOTON_UPDATE_STRATEGY:-PARALLEL}
+      UPDATE_INTERVAL: ${PHOTON_UPDATE_INTERVAL:-24h}
+      REGION: ${PHOTON_REGION:-africa}
+      BASE_URL: ${PHOTON_BASE_URL:-https://r2.koalasec.org/public}
+    ports:
+      - "${PHOTON_PORT:-2322}:2322"
+    volumes:
+      - photon_data:/photon/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2322/api?q=yaounde >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 8s
+      retries: 30
+      start_period: 180s
+    networks:
+      - motodigo_net
+
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    environment:
+      tile_urls: ${VALHALLA_TILE_URL:-https://download.geofabrik.de/africa/cameroon-latest.osm.pbf}
+      serve_tiles: "True"
+      build_elevation: "False"
+      build_admins: "True"
+      build_time_zones: "True"
+      build_tar: "True"
+      force_rebuild: ${VALHALLA_FORCE_REBUILD:-False}
+      use_tiles_ignore_pbf: "True"
+      server_threads: ${VALHALLA_THREADS:-2}
+    ports:
+      - "${VALHALLA_PORT:-8002}:8002"
+    volumes:
+      - valhalla_data:/custom_files
+    shm_size: "1gb"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8002/status >/dev/null || exit 1"]
+      interval: 20s
+      timeout: 8s
+      retries: 40
+      start_period: 240s
+    networks:
+      - motodigo_net
+
+  tiles:
+    image: caddy:2.8-alpine
+    ports:
+      - "${TILES_PORT:-8088}:80"
+    volumes:
+      - ./geo/tiles/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./geo/tiles:/srv:ro
+      - pmtiles_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/styles/motodigo.json >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+    networks:
+      - motodigo_net
+
+  backend-core:
+    environment:
+      GEO_STACK_PHOTON_ENABLED: "true"
+      GEO_STACK_PHOTON_BASE_URL: ${GEO_STACK_PHOTON_BASE_URL:-http://photon:2322}
+      GEO_STACK_PHOTON_TIMEOUT_MS: ${GEO_STACK_PHOTON_TIMEOUT_MS:-1200}
+      GEO_STACK_VALHALLA_ENABLED: ${GEO_STACK_VALHALLA_ENABLED:-true}
+      GEO_STACK_VALHALLA_BASE_URL: ${GEO_STACK_VALHALLA_BASE_URL:-http://valhalla:8002}
+      GEO_STACK_VALHALLA_TIMEOUT_MS: ${GEO_STACK_VALHALLA_TIMEOUT_MS:-2500}
+      GEO_STACK_VALHALLA_COSTING: ${GEO_STACK_VALHALLA_COSTING:-motorcycle}
+      GEO_STACK_VALHALLA_ALTERNATES: ${GEO_STACK_VALHALLA_ALTERNATES:-2}
+    depends_on:
+      photon:
+        condition: service_started
+      valhalla:
+        condition: service_started
+
+volumes:
+  photon_data:
+  valhalla_data:
+  pmtiles_data:

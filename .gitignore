@@ -11,6 +11,7 @@
 *.bak
 backups/
 volumes/
+geo/data/
 logs/
 .idea/
 *.iml
