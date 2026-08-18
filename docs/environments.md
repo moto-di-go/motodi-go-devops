@@ -42,7 +42,7 @@ Use the staging override:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.staging.yml config
-docker compose -f docker-compose.yml -f docker-compose.staging.yml up -d
+docker compose --env-file .env.staging -f docker-compose.yml -f docker-compose.staging.yml up -d
 ```
 
 Staging should use images from the registry and environment variables injected by the host or CI.
@@ -50,7 +50,28 @@ The staging override intentionally requires external values for database, object
 
 OTP SMS in staging is sent only through Africa's Talking Bulk (`OTP_PROVIDER=africas-talking`).
 The backend still generates and validates OTP codes; `OTP_PROVIDER=log` is rejected outside `local`/`test`.
-Copy `.env.staging.example` and inject real `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY` and `AFRICAS_TALKING_SENDER_ID`.
+Copy `.env.staging.example` to `.env.staging` (gitignored) and inject real `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY` and `AFRICAS_TALKING_SENDER_ID`.
+
+Set `AFRICAS_TALKING_BASE_URL=https://api.africastalking.com` only (host, no `/version1/messaging/bulk` suffix). The backend appends that path itself.
+
+### Sender ID
+
+Use `AFRICAS_TALKING_SENDER_ID=AFRICASTKNG` until Africa's Talking approves the custom alphanumeric sender (`MOTODIGO`). Switching too early returns `402 InvalidSenderId`. After approval, change the variable in local and staging env files and send one test SMS. No code change is required.
+
+### API key rotation
+
+If an Africa's Talking API key was ever pasted in chat, a ticket, or a shared screenshot, rotate it before staging or production:
+
+1. Open the Africa's Talking dashboard, Settings, API Key, and generate a new key.
+2. Replace `AFRICAS_TALKING_API_KEY` in `motodi-go-backend-core/.env` (local `mvn` runs) and in `motodi-go-devops/.env` or `.env.staging` (Compose).
+3. Restart backend-core so the new key is loaded.
+4. Confirm the old key no longer works.
+
+Do not commit `.env` files. Never log the API key or the OTP message body.
+
+### Local real SMS
+
+For a local smoke test against a Cameroonian number, set `OTP_PROVIDER=africas-talking` in `motodi-go-backend-core/.env` (profile `local` still allows this). Register via `POST /api/v1/auth/register`, then verify with `POST /api/v1/auth/otp/verify`. Switch back to `OTP_PROVIDER=log` if you do not want live SMS on every local registration.
 
 ## Production
 
