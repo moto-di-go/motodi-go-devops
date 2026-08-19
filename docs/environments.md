@@ -48,9 +48,16 @@ docker compose --env-file .env.staging -f docker-compose.yml -f docker-compose.s
 Staging should use images from the registry and environment variables injected by the host or CI.
 The staging override intentionally requires external values for database, object storage, JWT, OTP/SMS and CORS settings.
 
-OTP SMS in staging is sent only through Africa's Talking Bulk (`OTP_PROVIDER=africas-talking`).
+OTP SMS in staging uses Twilio as primary provider with automatic fallback to Africa's Talking (`OTP_PROVIDER=twilio`).
 The backend still generates and validates OTP codes; `OTP_PROVIDER=log` is rejected outside `local`/`test`.
-Copy `.env.staging.example` to `.env.staging` (gitignored) and inject real `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY` and `AFRICAS_TALKING_SENDER_ID`.
+Copy `.env.staging.example` to `.env.staging` (gitignored) and inject real credentials for both providers:
+
+- **Twilio (primary)**: `TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY_SID`, `TWILIO_API_KEY_SECRET`, `TWILIO_FROM_NUMBER`
+- **Africa's Talking (fallback)**: `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`, `AFRICAS_TALKING_SENDER_ID`
+
+If Twilio fails (timeout, HTTP error, delivery rejection), the backend automatically retries via Africa's Talking. Both sets of credentials are required when `OTP_PROVIDER=twilio`.
+
+You can still use `OTP_PROVIDER=africas-talking` to send exclusively through Africa's Talking (no Twilio, no fallback).
 
 Set `AFRICAS_TALKING_BASE_URL=https://api.africastalking.com` only (host, no `/version1/messaging/bulk` suffix). The backend appends that path itself.
 
