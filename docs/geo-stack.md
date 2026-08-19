@@ -75,6 +75,8 @@ Aucune clé n’est obligatoire pour la pile auto-hébergée. Les comptes ci-des
 - Image Docker retenue : https://github.com/rtuszik/photon-docker
 - Région locale par défaut : `PHOTON_REGION=africa`
 - Mirror par défaut : `PHOTON_BASE_URL=https://r2.koalasec.org/public`
+- Mises à jour automatiques **désactivées** (`PHOTON_UPDATE_STRATEGY=DISABLED`). Relancer l’index depuis le dashboard admin (bouton SIG).
+- Contrôle manuel : service interne `photon-control` (`GEO_STACK_PHOTON_CONTROL_URL=http://photon-control:8080`)
 - Demo public `https://photon.komoot.io` : **interdit en prod** (throttling, pas de SLA)
 - Clé : aucune en auto-hébergé
 - Coût logiciel : 0
@@ -140,7 +142,19 @@ Bootstrap des extraits (long, une fois) :
 ./geo/scripts/bootstrap-extracts.ps1
 ```
 
-Ces scripts téléchargent l’extrait OSM Cameroun pour Valhalla. Photon télécharge lui-même son index selon `PHOTON_REGION`.
+Ces scripts téléchargent l’extrait OSM Cameroun pour Valhalla. Photon télécharge lui-même son index selon `PHOTON_REGION` au premier démarrage. Les mises à jour suivantes sont manuelles (dashboard admin), pas un cron 24h.
+
+Pour appliquer `UPDATE_STRATEGY=DISABLED` sans couper un téléchargement déjà lancé : ne pas recreer le conteneur `photon` tant que le dump n’est pas terminé. On peut démarrer uniquement le sidecar :
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.geo.yml up -d --no-deps photon-control
+```
+
+Une fois le dump terminé, recreer Photon pour prendre la stratégie désactivée :
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.geo.yml up -d --no-deps photon
+```
 
 Puis dans `.env` devops / backend-core :
 

@@ -8,10 +8,11 @@ services:
   photon:
     image: rtuszik/photon-docker:latest
     environment:
-      UPDATE_STRATEGY: ${PHOTON_UPDATE_STRATEGY:-PARALLEL}
-      UPDATE_INTERVAL: ${PHOTON_UPDATE_INTERVAL:-24h}
+      UPDATE_STRATEGY: ${PHOTON_UPDATE_STRATEGY:-DISABLED}
+      UPDATE_INTERVAL: ${PHOTON_UPDATE_INTERVAL:-720h}
       REGION: ${PHOTON_REGION:-africa}
       BASE_URL: ${PHOTON_BASE_URL:-https://r2.koalasec.org/public}
+      FORCE_UPDATE: ${PHOTON_FORCE_UPDATE:-FALSE}
     ports:
       - "${PHOTON_PORT:-2322}:2322"
     volumes:
@@ -22,6 +23,30 @@ services:
       timeout: 8s
       retries: 30
       start_period: 180s
+    networks:
+      - motodigo_net
+
+  photon-control:
+    build:
+      context: ./geo/photon-control
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-motodigo}
+      PHOTON_SERVICE: photon
+      PHOTON_STATUS_URL: http://photon:2322/status
+      PORT: "8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - "8080"
+    depends_on:
+      photon:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
     networks:
       - motodigo_net
 
@@ -73,6 +98,7 @@ services:
       GEO_STACK_PHOTON_ENABLED: "true"
       GEO_STACK_PHOTON_BASE_URL: ${GEO_STACK_PHOTON_BASE_URL:-http://photon:2322}
       GEO_STACK_PHOTON_TIMEOUT_MS: ${GEO_STACK_PHOTON_TIMEOUT_MS:-1200}
+      GEO_STACK_PHOTON_CONTROL_URL: ${GEO_STACK_PHOTON_CONTROL_URL:-http://photon-control:8080}
       GEO_STACK_VALHALLA_ENABLED: "true"
       GEO_STACK_VALHALLA_BASE_URL: ${GEO_STACK_VALHALLA_BASE_URL:-http://valhalla:8002}
       GEO_STACK_VALHALLA_TIMEOUT_MS: ${GEO_STACK_VALHALLA_TIMEOUT_MS:-12000}
@@ -80,6 +106,8 @@ services:
       GEO_STACK_VALHALLA_ALTERNATES: ${GEO_STACK_VALHALLA_ALTERNATES:-2}
     depends_on:
       photon:
+        condition: service_started
+      photon-control:
         condition: service_started
       valhalla:
         condition: service_started
