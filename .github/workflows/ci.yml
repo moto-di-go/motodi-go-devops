@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
+  actions: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -65,29 +67,46 @@ jobs:
         with:
           path: motodi-go-devops
 
+      - name: Require cross-repo read token
+        env:
+          CROSS_REPO_READ_TOKEN: ${{ secrets.CROSS_REPO_READ_TOKEN }}
+        run: |
+          if [ -z "$CROSS_REPO_READ_TOKEN" ]; then
+            echo "::error::CROSS_REPO_READ_TOKEN is missing. The default GITHUB_TOKEN cannot checkout private sibling repositories (GitHub returns 404 on Get a repository). Add an org or fine-grained PAT with contents:read on motodi-go-backend-core, motodi-go-backend-ai, motodi-go-api-gateway and motodi-go-admin-dashboard. See docs/github-setup.md."
+            exit 1
+          fi
+
       - name: Checkout backend core
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/motodi-go-backend-core
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: motodi-go-backend-core
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
 
       - name: Checkout backend AI
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/motodi-go-backend-ai
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: motodi-go-backend-ai
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
 
       - name: Checkout API gateway
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/motodi-go-api-gateway
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: motodi-go-api-gateway
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
 
       - name: Checkout admin dashboard
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/motodi-go-admin-dashboard
+          ref: ${{ github.event.pull_request.base.ref || github.ref_name }}
           path: motodi-go-admin-dashboard
+          token: ${{ secrets.CROSS_REPO_READ_TOKEN }}
 
       - name: Start stack
         working-directory: motodi-go-devops
@@ -121,3 +140,4 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
