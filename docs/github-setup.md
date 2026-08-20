@@ -25,6 +25,21 @@ Protect `main` and `dev`:
 - No force push.
 - Delete branch after merge.
 
+## CI secrets (Docker Smoke)
+
+`Docker Smoke` checks out the sibling application repositories and builds them with Compose. Those repos are private, so the default `GITHUB_TOKEN` of `motodi-go-devops` cannot read them. GitHub then answers `404 Not Found` on `GET /repos/{owner}/{repo}` while checkout tries to resolve the default branch.
+
+Create a fine-grained PAT (or a GitHub App installation token) with `contents: read` on:
+
+- `motodi-go-backend-core`
+- `motodi-go-backend-ai`
+- `motodi-go-api-gateway`
+- `motodi-go-admin-dashboard`
+
+Store it as the repository or organization secret `CROSS_REPO_READ_TOKEN` on `motodi-go-devops`. Pinning `ref: main` without this token does not fix the 404.
+
+The smoke job checks out sibling repos at the PR base branch (`dev` / `main`) or at the pushed branch. Keep those branch names in sync across the application repositories.
+
 ## Labels
 
 Import labels from `github/labels.yml` using the GitHub CLI or an organization label sync tool.
