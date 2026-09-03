@@ -99,6 +99,13 @@ services:
       MOBILE_MONEY_CLIENT_MODE: ${MOBILE_MONEY_CLIENT_MODE:-stub}
       MOBILE_MONEY_PENDING_TTL: ${MOBILE_MONEY_PENDING_TTL:-30m}
       MTN_MOMO_BASE_URL: ${MTN_MOMO_BASE_URL:-https://placeholder.mtn.example}
+      NFC_SIGNING_SECRET: ${NFC_SIGNING_SECRET:-change-me-nfc-signing-secret-32b}
+      NFC_TOKEN_TTL: ${NFC_TOKEN_TTL:-5m}
+      NFC_MAX_AMOUNT: ${NFC_MAX_AMOUNT:-50000}
+      NFC_OFFLINE_QUOTA_AMOUNT: ${NFC_OFFLINE_QUOTA_AMOUNT:-20000}
+      NFC_OFFLINE_QUOTA_TTL: ${NFC_OFFLINE_QUOTA_TTL:-24h}
+      OFFLINE_MAP_BASE_URL: ${OFFLINE_MAP_BASE_URL:-http://object-storage:9000/motodigo-maps}
+      OFFLINE_MAP_PACK_TTL_DAYS: ${OFFLINE_MAP_PACK_TTL_DAYS:-30}
       ORANGE_MONEY_BASE_URL: ${ORANGE_MONEY_BASE_URL:-https://placeholder.orange.example}
       AGGREGATOR_BASE_URL: ${AGGREGATOR_BASE_URL:-https://placeholder.aggregator.example}
     volumes:
